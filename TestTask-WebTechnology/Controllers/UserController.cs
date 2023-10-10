@@ -4,6 +4,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using TestTask_WebTechnology.DTO;
 using TestTask_WebTechnology.Interfaces;
 using TestTask_WebTechnology.Models;
+using TestTask_WebTechnology.QueryParameters;
 
 namespace TestTask_WebTechnology.Controllers
 {
@@ -21,18 +22,42 @@ namespace TestTask_WebTechnology.Controllers
 
         [HttpGet]
         [Route("list-users")]
-        [ProducesResponseType(200,Type = typeof(IEnumerable<User>))]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<User>))]
         [SwaggerOperation(Summary = "Retrieves a list of users")]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> GetUsers([FromQuery] UserQueryParameters parameters)
         {
             var users = await _userRepository.GetUsers();
+
+            if (!string.IsNullOrEmpty(parameters.Name))
+            {
+                users = users.Where(u => u.Name.Contains(parameters.Name)).ToList();
+            }
+
+            switch (parameters.OrderBy)
+            {
+                case "Name":
+                    users = parameters.SortOrder == "desc" ? users.OrderByDescending(u => u.Name).ToList() : users.OrderBy(u => u.Name).ToList();
+                    break;
+                case "Age":
+                    users = parameters.SortOrder == "desc" ? users.OrderByDescending(u => u.Age).ToList() : users.OrderBy(u => u.Age).ToList();
+                    break;
+                case "Email":
+                    users = parameters.SortOrder == "desc" ? users.OrderByDescending(u => u.Email).ToList() : users.OrderBy(u => u.Email).ToList();
+                    break;
+                default:
+                    break;
+            }
+
+            users = users.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize).ToList();
+
             var userDTO = _mapper.Map<List<UserDTO>>(users);
 
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             return Ok(userDTO);
         }
+
 
         [HttpGet("user/{userId}")]
         [ProducesResponseType(200, Type = typeof(User))]

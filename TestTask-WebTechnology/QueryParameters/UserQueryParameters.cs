@@ -1,6 +1,6 @@
-﻿namespace TestTask_WebTechnology.DTO
+﻿namespace TestTask_WebTechnology.QueryParameters
 {
-    public class QueryParameters
+    public class UserQueryParameters
     {
         private const int MaxPageSize = 50;
         private int pageSize = 10;
@@ -10,7 +10,7 @@
         public int PageSize
         {
             get { return pageSize; }
-            set { pageSize = (value > MaxPageSize) ? MaxPageSize : value; }
+            set { pageSize = value > MaxPageSize ? MaxPageSize : value; }
         }
 
         public string Name { get; set; } = string.Empty;

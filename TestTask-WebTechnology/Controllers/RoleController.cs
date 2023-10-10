@@ -5,6 +5,7 @@ using System.Data;
 using TestTask_WebTechnology.DTO;
 using TestTask_WebTechnology.Interfaces;
 using TestTask_WebTechnology.Models;
+using TestTask_WebTechnology.QueryParameters;
 
 namespace TestTask_WebTechnology.Controllers
 {
@@ -23,7 +24,7 @@ namespace TestTask_WebTechnology.Controllers
         }
 
 
-        [HttpGet]
+        /*[HttpGet]
         [Route("role/role-list")]
         [ProducesResponseType(200, Type = typeof(IEnumerable<Role>))]
         [SwaggerOperation(Summary = "Gets all roles returns a list of DTO's")]
@@ -35,6 +36,38 @@ namespace TestTask_WebTechnology.Controllers
                 return BadRequest(ModelState);
 
             return Ok(rolesDTO);
+        }*/
+
+        [HttpGet]
+        [Route("role/role-list")]
+        [ProducesResponseType(200, Type = typeof(IEnumerable<Role>))]
+        [SwaggerOperation(Summary = "Gets all roles returns a list of DTO's")]
+        public async Task<IActionResult> GetRoles([FromQuery] RoleQueryParameters parameters)
+        {
+            var roles = await _roleRepository.GetRoles();
+
+            if (parameters.RoleType != null)
+            {
+                roles = roles.Where(r => r.RoleType == parameters.RoleType).ToList();
+            }
+
+            switch (parameters.OrderBy)
+            {
+                case "RoleType":
+                    roles = parameters.SortOrder == "desc" ? roles.OrderByDescending(r => r.RoleType).ToList() : roles.OrderBy(r => r.RoleType).ToList();
+                    break;
+                default:
+                    break;
+            }
+
+            roles = roles.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize).ToList();
+
+            var roleDTO = _mapper.Map<List<Role>>(roles);
+
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            return Ok(roleDTO);
         }
 
         [HttpGet("role/{roleId}")]
